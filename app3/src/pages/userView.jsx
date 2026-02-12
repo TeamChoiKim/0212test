@@ -1,9 +1,58 @@
 const UserView = () => {
   return (
-    <div className="text-center">
-      <h1>404</h1>
-      <p>페이지를 찾을 수 없습니다.</p>
+    <div className="container mt-3 position-relative">
+		<h1 className="display-1 text-center">회원정보</h1>
+		<div>
+			<img src="../img01.jpg" className="border user_pt" />
     </div>
+		<form>
+			<div>
+				<div className="mb-3 mt-3">
+					<label htmlFor="name" className="form-label">이름</label>
+					<input type="text" className="form-control" id="name" name="name" readOnly="readonly" />
+				</div>
+				<div className="mb-3 mt-3">
+					<label htmlFor="email" className="form-label">이메일</label>
+					<input type="email" className="form-control" id="email" name="email" readOnly="readonly" />
+				</div>
+				<div className="mb-3 mt-3">
+					<label htmlFor="regDate" className="form-label">가입일</label>
+					<input type="text" className="form-control" id="regDate" name="regDate" readOnly="readonly" />
+				</div>
+				<div className="mb-3 mt-3">
+					<label htmlFor="modDate" className="form-label">회원정보 수정일</label>
+					<input type="text" className="form-control" id="modDate" name="modDate" readOnly="readonly" />
+				</div>
+
+				<div className="d-flex">
+					<div className="p-2 flex-fill">
+						<div className="form-check">
+							<input type="radio" className="form-check-input" id="radio1" name="gender" value="1" checked
+								disabled />남성
+							<label className="form-check-label" htmlFor="radio1"></label>
+						</div>
+					</div>
+					<div className="p-2 flex-fill">
+						<div className="form-check">
+							<input type="radio" className="form-check-input" id="radio2" name="gender" value="2" disabled />여성
+							<label className="form-check-label" htmlFor="radio2"></label>
+						</div>
+					</div>
+				</div>
+        </div>
+		</form>
+		<div className="d-flex">
+			<div className="p-2 flex-fill d-grid">
+				<a href="../index.html" className="btn btn-primary">취소</a>
+			</div>
+			<div className="p-2 flex-fill d-grid">
+				<a href="./user_edit.html" className="btn btn-primary">수정</a>
+			</div>
+			<div className="p-2 flex-fill d-grid">
+				<a href="../index.html" className="btn btn-primary">탈퇴</a>
+			</div>
+		</div>
+	</div>
   )
 }
 
