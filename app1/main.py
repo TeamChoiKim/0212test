@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Response, Request
 from kafka import KafkaProducer
 from settings import settings
 from pydantic import EmailStr, BaseModel
@@ -7,10 +7,11 @@ import redis
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError, ExpiredSignatureError
 from db import findOne
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+import uuid
 
-security = HTTPBearer()
+# security = HTTPBearer()
 
 class EmailModel(BaseModel):
   email: EmailStr
@@ -21,7 +22,7 @@ class CodeModel(BaseModel):
 
 def set_token(email: str):
   try:
-    sql = f"SELECT `no`, `name` FROM test.user WHERE `email` = '{email}'"
+    sql = f"SELECT `no`, `name` FROM test.user WHERE `email` = '{email}' and `delYn` = 0"
     data = findOne(sql)
     if data:
       iat = datetime.now(timezone.utc)
@@ -33,31 +34,31 @@ def set_token(email: str):
         "iat": iat,
         "exp": exp
       }
-      return jwt.encode(data, settings.secret_key, algorithm=settings.algorithm)
+      return { "token": jwt.encode(data, settings.secret_key, algorithm=settings.algorithm), "name": data["name"]}
   except JWTError as e:
     print(f"JWT ERROR : {e}")
   return None
 
-def get_payload(credentials: HTTPAuthorizationCredentials = Depends(security)):
-  if credentials.scheme == "Bearer":
-    try:
-      payload = jwt.decode(credentials.credentials, settings.secret_key, algorithms=settings.algorithm)
-      exp = payload.get("exp")
+# def get_payload(credentials: HTTPAuthorizationCredentials = Depends(security)):
+#   if credentials.scheme == "Bearer":
+#     try:
+#       payload = jwt.decode(credentials.credentials, settings.secret_key, algorithms=settings.algorithm)
+#       exp = payload.get("exp")
 
-      now = datetime.now(timezone.utc).timestamp()
-      minutes, remaining_seconds = divmod(int(exp - now), 60)
-      return payload
-    except ExpiredSignatureError as e:
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token expired",
-      )
-    except JWTError as e:
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid token",
-      )
-  return None
+#       now = datetime.now(timezone.utc).timestamp()
+#       minutes, remaining_seconds = divmod(int(exp - now), 60)
+#       return payload
+#     except ExpiredSignatureError as e:
+#       raise HTTPException(
+#         status_code=status.HTTP_401_UNAUTHORIZED,
+#         detail="Token expired",
+#       )
+#     except JWTError as e:
+#       raise HTTPException(
+#         status_code=status.HTTP_401_UNAUTHORIZED,
+#         detail="Invalid token",
+#       )
+#   return None
 
 app = FastAPI(title="Producer")
 
@@ -92,26 +93,56 @@ def read_root():
 
 @app.post("/login")
 def producer(model: EmailModel):
-  pd.send(settings.kafka_topic, dict(model))
-  pd.flush()
-  return {"status": True}
+  sql = f"SELECT `no`, `name` FROM test.user WHERE `email` = '{model.email}' and `delYn` = 0"
+  data = findOne(sql)
+  if data :
+    pd.send(settings.kafka_topic, dict(model))
+    pd.flush()
+    return {"status": True, "msg": "이메일의 인증코드를 확인해주세요."}
+  else: 
+    return {"status": False, "msg": "이메일을 확인해주세요."}
+  
 
 @app.post("/code")
-def code(model: CodeModel):
-  print(model.id)
+def code(model: CodeModel, response: Response):
   result = client.get(model.id)
-  print(result)
   if result:
-    access_token = set_token(result)
-    if access_token:
+    data = set_token(result)
+    if data:
       # model에 있는 데이터 삭제
-      # client.delete(model.id)
-      return {"status": True, "access_token": access_token}
-  return {"status": False}
+      client.delete(model.id)
+      id = uuid.uuid4().hex
+      client.setex(id, 60*30, data["token"])
+      response.set_cookie(
+        key="user",
+        value=id,
+        max_age=1800,        
+        expires=1800,        
+        path="/",
+        secure=False,
+        httponly=True,
+        samesite="lax",
+      )
+
+      return {"status": True, "msg": f"{data["name"]}님 환영합니다."}
+  return {"status": False,"msg":"이메일 코드를 확인해주세요."}
+
+# @app.post("/me")
+# def me(payload = Depends(get_payload)):
+#   if payload:
+#     print(payload)
+#     return {"status": True}
+#   return {"status": False}
 
 @app.post("/me")
-def me(payload = Depends(get_payload)):
-  if payload:
-    print(payload)
-    return {"status": True, "no": payload["sub"], "name": payload["name"]}
-  return {"status": False}
+def me(request : Request):
+  id = request.cookies.get("user") # id값은 uuid
+  if id :
+    token = client.get(id)
+    data = jwt.decode(token,settings.secret_key,algorithms=settings.algorithm)
+    sql = f'''
+    SELECT * FROM `test`.user where `no` = '{data["sub"]}'
+    '''
+    userInfo = findOne(sql)
+    return {"status": True, "user" : userInfo}
+  return {"status": False, "msg" : "로그인을 확인해주세요."}
