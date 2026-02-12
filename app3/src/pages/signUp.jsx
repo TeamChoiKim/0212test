@@ -1,8 +1,48 @@
+import { useNavigate } from "react-router"
+
+
 const SignUp = () => {
+  const nav = useNavigate()
+
+
   return (
-    <div className="text-center">
-      <h1>404</h1>
-      <p>페이지를 찾을 수 없습니다.</p>
+    <div className="container mt-3 box_size" >
+      <h1 className="display-1 text-center">회원가입</h1>
+      <form>
+        <div className="mb-3 mt-3">
+          <label htmlFor="name" className="form-label">이름:</label>
+          <input type="text" className="form-control" id="name" placeholder="이름을 입력하세요." name="name" />
+        </div>
+        <div className="mb-3 mt-3">
+          <label htmlFor="email" className="form-label">이메일:</label>
+          <div className="d-flex">
+            <input type="email" className="form-control" id="email" placeholder="이메일를 입력하세요." name="email" />
+            <button type="button" className="btn btn-primary email_btn">중복 확인</button>
+          </div>
+        </div>
+        <div className="d-flex">
+          <div className="p-2 flex-fill">
+            <div className="form-check">
+              <input type="radio" className="form-check-input" id="radio1" name="gender" value="1" defaultChecked onChange={() => { }} />남성
+              <label className="form-check-label" htmlFor="radio1"></label>
+            </div>
+          </div>
+          <div className="p-2 flex-fill">
+            <div className="form-check">
+              <input type="radio" className="form-check-input" id="radio2" name="gender" value="2" />여성
+              <label className="form-check-label" htmlFor="radio2"></label>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div className="d-flex">
+        <div className="p-2 flex-fill d-grid">
+          <button type="button" onClick={()=>{}} className="btn btn-primary">가입</button>
+        </div>
+        <div className="p-2 flex-fill d-grid">
+          <button type="button" onClick={()=>nav("/")} className="btn btn-primary">취소</button>
+        </div>
+      </div>
     </div>
   )
 }
