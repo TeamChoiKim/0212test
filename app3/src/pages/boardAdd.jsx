@@ -1,8 +1,26 @@
 const BoardAdd = () => {
   return (
-    <div className="text-center">
-      <h1>404</h1>
-      <p>페이지를 찾을 수 없습니다.</p>
+    <div className="container mt-3">
+      <h1 className="display-1 text-center">게시글 작성</h1>
+      <form>
+        <div className="mb-3 mt-3">
+          <label htmlFor="title" className="form-label">제목</label>
+          <input type="text" className="form-control" id="title" placeholder="제목을 입력하세요." name="title" />
+        </div>
+        <div className="mb-3 mt-3">
+          <label htmlFor="content" className="form-label">내용</label>
+          <textarea type="text" className="form-control h-50" rows="10" placeholder="내용을 입력하세요."
+            name="content"></textarea>
+        </div>
+        <div className="d-flex">
+          <div className="p-2 flex-fill d-grid">
+            <a href="../index.html" className="btn btn-primary">등록</a>
+          </div>
+          <div className="p-2 flex-fill d-grid">
+            <a href="../index.html" className="btn btn-primary">취소</a>
+          </div>
+        </div>
+      </form>
     </div>
   )
 }
