@@ -14,10 +14,10 @@ import uuid
 # security = HTTPBearer()
 
 class EmailModel(BaseModel):
-  email: EmailStr
+  email: str
 
 class CodeModel(BaseModel):
-  id: str
+  code: str
 
 
 def set_token(email: str):
@@ -105,12 +105,12 @@ def producer(model: EmailModel):
 
 @app.post("/code")
 def code(model: CodeModel, response: Response):
-  result = client.get(model.id)
+  result = client.get(model.code)
   if result:
     data = set_token(result)
     if data:
       # model에 있는 데이터 삭제
-      client.delete(model.id)
+      client.delete(model.code)
       id = uuid.uuid4().hex
       client.setex(id, 60*30, data["token"])
       response.set_cookie(
@@ -146,3 +146,16 @@ def me(request : Request):
     userInfo = findOne(sql)
     return {"status": True, "user" : userInfo}
   return {"status": False, "msg" : "로그인을 확인해주세요."}
+
+@app.post("/logout")
+def logout(response: Response, request: Request):
+    id = request.cookies.get("user")
+    client.delete(id)
+    response.delete_cookie(
+        key="user",
+        path="/",
+        secure=False,  
+        httponly=True,
+        samesite="lax",
+    )
+    return {"status": True, "msg": "로그아웃 완료"}

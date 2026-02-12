@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import { useNavigate } from "react-router";
-import { useCookies } from 'react-cookie'
+// import { useCookies } from 'react-cookie'
 import { api } from '@utils/network.js'
 
 export const AuthContext = createContext()
@@ -8,38 +8,49 @@ export const AuthContext = createContext()
 const AuthProvider = ({children}) => {
   const [isLogin, setIsLogin] = useState(false)
   const navigate = useNavigate()
-  const [cookies, setCookie, removeCookie] = useCookies(['ck']);
+  // const [cookies, setCookie, removeCookie] = useCookies(['user']);
 
-  const setAuth = status => {
-    localStorage.setItem("user", status);
-    setIsLogin(status);
-    navigate("/");
-  }
+  // const setAuth = status => {
+  //   setIsLogin(status)
+  // }
 
-  const clearAuth = () => {
-    localStorage.removeItem("user")
-    setIsLogin(false)
-    navigate("/")
-  }
+  // const clearAuth = () => {
+  //   setIsLogin(false)
+  //   navigate("/")
+  // }
 
   const removeAuth = () => {
     api.post("/logout")
     .then(res => {
-      if(res.data.status) clearAuth()
+      if(res.data.status) {
+        setIsLogin(false)
+        alert(res.data.msg)
+        navigate("/")
+      }
     })
     .catch(err => console.error(err))
   }
 
   const checkAuth = () => {
-    return localStorage.getItem("user") ? true : false
+    api.post("/me")
+      .then(res=>{
+        if (res.data.status) {
+          setIsLogin(true);
+          return res.data.user
+        } else {
+          return res.data.msg
+        }
+      })
+      .catch(err=>console.log(err))
   }
 
   useEffect(() => {
-    if(localStorage.getItem("user")) setIsLogin(true)
-  }, [])
+    checkAuth()
+    console.log(isLogin)
+  }, [isLogin])
 
   return (
-    <AuthContext.Provider value={{ isLogin, setAuth, removeAuth, clearAuth, checkAuth }}>
+    <AuthContext.Provider value={{ isLogin, removeAuth, checkAuth }}>
       {children}
     </AuthContext.Provider>
   )
